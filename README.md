@@ -8,9 +8,9 @@ Projeto simples em Python para varredura de redes locais
 
 ## Demonstração
 
-python scanet.py -e <rede>
+python scanet.py -e rede
 
-python scanet.py -m <host> -p <porta(s)>
+python scanet.py -m host -p porta(s)
 
 
 ## Funcionalidades
