@@ -23,7 +23,7 @@ def enumera_hosts(rede):
 
     return hosts
 
-# Funçã para escaneamento de portas, recebe o host a ser mapeado
+# Função para escaneamento de portas, recebe o host a ser mapeado
 def mapeia_portas(host, portas):
     multiplas_portas = []
     ip = IP()
