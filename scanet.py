@@ -1,84 +1,96 @@
-# Importa bibliotecas necessárias 
-from sys import argv  
-from scapy.all import srp, Ether, ARP
-from scapy.all import IP, TCP, sr
+import socket
+import threading
+import sys
+import time
 
-# Usuário escolhe a opção de varredura e o alvo (rede/host)
-scan_option = argv[1]
-alvo = argv[2]
 
-# Função para descoberta de hosts, recebe a rede a ser mapeada como argumento e retorna todos os hosts encontrados
-def enumera_hosts(rede):
-    hosts = []
-    arp = ARP()
-    arp.pdst = rede
- 
-    ether = Ether()
-    ether.dst = 'ff:ff:ff:ff:ff:ff'
-    
-    pck = ether / arp
-    ips = srp(pck, timeout=10, verbose=1)[0]
-    for ip in ips:
-        hosts.append(ip[1].psrc)
+PARAMS = ['-e', '-m', '-p']
+threads = []
+hosts_ativos = []
+portas_abertas = []
 
-    return hosts
 
-# Função para escaneamento de portas, recebe o host a ser mapeado
-def mapeia_portas(host, portas):
-    multiplas_portas = []
-    ip = IP()
-    ip.dst = host
+def main(alvo):
+    if sys.argv[1] == PARAMS[0]:
+        print(f"+ Escaneando a rede {alvo}... +\n")
+        time.sleep(3)
+        pega_hosts_ativos(alvo)
+        hosts_ativos.sort()
+        print(hosts_ativos)
+        time.sleep(3)
+        print("+ Rede escaneada com sucesso... +")
+    elif sys.argv[1] == PARAMS[1]:
+        if sys.argv[3] == PARAMS[2]:
+            print(f"+ Escaneando o host {alvo}... +")
+            time.sleep(3)
+            pega_portas_abertas(alvo)
+            portas_abertas.sort()
+            time.sleep(3)
+            print("+ Host escaneado com sucesso ... +")
+    portas_abertas.clear()
+    hosts_ativos.clear()
+    return True
 
-    tcp = TCP() 
 
-    if '-' in portas:
-        ports_list = portas.split('-') 
-        multiplas_portas.append(int(ports_list[0]))
-        multiplas_portas.append(int(ports_list[1]))
-        tcp.dport = (multiplas_portas[0], multiplas_portas[1])
+def conecta_aos_hosts(rede, host):
+    ipv4 = f'{rede}.{host}'
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s.connect((ipv4, 65535))
+    except TimeoutError as erro:
+        pass
+    except ConnectionRefusedError as erro:
+        hosts_ativos.append(ipv4)
+    finally:
+        s.close()
+    return True
 
-    elif ',' in portas:
-        ports_list = portas.split(',')
-        for i in range(len(ports_list)):
-            multiplas_portas.append(int(ports_list[i]))
-        tcp.dport = multiplas_portas
 
-    else:
-        tcp.dport = int(portas)
-        
-    tcp.flags = 'S'
-
-    pck = ip / tcp
-    response1, response2 = sr(pck, timeout=200, verbose=1)
-    print('Host: {}\n'.format(host))
-    for r1, r2 in response1:
-        status = r2[TCP].flags
-        porta = r1[TCP].dport
-        if status == 'SA':
-            print('{0}/TCP: Open'.format(porta))
+def conecta_a_portas_tcp(ipv4, porta):
+    protocolo = resolve_servico(porta)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if s.connect_ex((ipv4, porta)) == 0:
+        portas_abertas.append(porta)
+        if protocolo == None:
+            print(f"Porta {porta}/TCP: Aberta")
         else:
-            print('{0}/TCP: Closed'.format(porta))
+            print(f"Porta {porta}/TCP ({protocolo}): Aberta")
+    s.close()
+    return True
 
-    if len(multiplas_portas) > 0:
-        multiplas_portas.clear()
 
-    return '\nScan de portas concluído com sucesso!\n'
-           
-# Procedimento principal, executa as funções de descoberta de hosts/escaneamento de portas
-def main():
-    if scan_option == '-e':
-        hosts = enumera_hosts(alvo)
-        for host in hosts:
-            print(host) 
-    
-    elif scan_option == '-m':
-        if argv[3] == '-p':
-            port_scan = mapeia_portas(alvo, argv[4])
-            print(port_scan)
-        else:
-            print('Não foi possível escanear as portas.')
+def resolve_servico(porta):
+    protocolo = None
+    try:
+        servico = socket.getservbyport(porta)
+        protocolo = servico
+    except:
+        pass
+    finally:
+        return protocolo
 
-    else:
-        print('Opção de escaneamento inválida.')
 
-main()
+def pega_hosts_ativos(rede):
+    for i in range(1, 255):
+        t = threading.Thread(target=conecta_aos_hosts, args=(rede, i,))
+        t.start()
+        threads.append(t)
+    for thread in threads:
+        thread.join()
+    threads.clear()
+    return True
+
+
+def pega_portas_abertas(ipv4):
+    lista_de_portas = sys.argv[4].split(',')
+    for porta in lista_de_portas:
+        t = threading.Thread(target=conecta_a_portas_tcp, args=(ipv4, int(porta),))
+        t.start()
+        threads.append(t)
+    for thread in threads:
+        thread.join()
+    threads.clear()
+    return True
+
+
+main(sys.argv[2])
