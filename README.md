@@ -1,4 +1,4 @@
-# Scanet
+# Scanet v1.0
 
 Projeto simples em Python para varredura de redes locais
 ## Autores
@@ -28,9 +28,9 @@ Em questão de hard skills, aprendi a construir uma ferramenta básica para reco
 ## Uso/Exemplos
 
 ```
-python scanet.py -e 192.168.1.0/24
+python scanet.py -e 10.0.0 
 
-python scanet.py -m 192.168.1.254 -p 80,443,445
+python scanet.py -m 10.0.0.110 -p 80,443,445
 
 ```
 
