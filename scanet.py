@@ -61,7 +61,7 @@ def conecta_aos_hosts(rede, host):
     return True
 
 
-# Função responsável por tentar estabelecer uma conexão TCP com cada porta especificada pelo usu[ario
+# Função responsável por tentar estabelecer uma conexão TCP com cada porta especificada pelo usuário
 def conecta_a_portas_tcp(ipv4, porta):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     if s.connect_ex((ipv4, porta)) == 0:
