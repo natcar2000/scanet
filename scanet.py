@@ -4,7 +4,7 @@
 # Email: natanrod965@gmail.com
 # Github: https://github.com/natcar2000
 # Uso: Veja o arquivo README.md
-# Licensa: Veja o arquivo README.md
+# Licença: Veja o arquivo LICENSE
 
 
 import socket
