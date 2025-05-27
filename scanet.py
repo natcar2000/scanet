@@ -1,3 +1,10 @@
+# Programa: scanet v1.0
+# Descrição: Pequeno scanner de redes locais
+# Desenvolvedor: Natanael Rodrigues
+# Email: natanrod965@gmail.com
+# Github: https://github.com/natcar2000
+
+
 import socket
 import threading
 import sys
@@ -10,6 +17,7 @@ hosts_ativos = []
 portas_abertas = []
 
 
+# Função principal do programa, que realiza ações conforme os parâmetros passados pelo usuário
 def main(alvo):
     if sys.argv[1] == PARAMS[0]:
         print(f"+ Escaneando a rede {alvo}... +\n")
@@ -25,6 +33,12 @@ def main(alvo):
             time.sleep(3)
             pega_portas_abertas(alvo)
             portas_abertas.sort()
+            for porta_aberta in portas_abertas:
+                protocolo = resolve_servico(porta_aberta)
+                if protocolo == None:
+                    print(f"Porta {porta_aberta}/TCP: Aberta")
+                else:
+                    print(f"Porta {porta_aberta} ({protocolo})/TCP: Aberta")
             time.sleep(3)
             print("+ Host escaneado com sucesso ... +")
     portas_abertas.clear()
@@ -32,6 +46,7 @@ def main(alvo):
     return True
 
 
+# Função que retorna em uma lista todos os hosts ativos em uma rede
 def conecta_aos_hosts(rede, host):
     ipv4 = f'{rede}.{host}'
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -46,19 +61,16 @@ def conecta_aos_hosts(rede, host):
     return True
 
 
+# Função responsável por tentar estabelecer uma conexão TCP com cada porta especificada pelo usu[ario
 def conecta_a_portas_tcp(ipv4, porta):
-    protocolo = resolve_servico(porta)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     if s.connect_ex((ipv4, porta)) == 0:
         portas_abertas.append(porta)
-        if protocolo == None:
-            print(f"Porta {porta}/TCP: Aberta")
-        else:
-            print(f"Porta {porta}/TCP ({protocolo}): Aberta")
     s.close()
     return True
 
 
+# Função responsável por tentar identificar o serviço de uma porta especificada pelo usuário
 def resolve_servico(porta):
     protocolo = None
     try:
@@ -70,6 +82,7 @@ def resolve_servico(porta):
         return protocolo
 
 
+# Função que implementa o escaneamento de hosts
 def pega_hosts_ativos(rede):
     for i in range(1, 255):
         t = threading.Thread(target=conecta_aos_hosts, args=(rede, i,))
@@ -81,6 +94,7 @@ def pega_hosts_ativos(rede):
     return True
 
 
+# Função que implementa o mapeamento de portas
 def pega_portas_abertas(ipv4):
     lista_de_portas = sys.argv[4].split(',')
     for porta in lista_de_portas:
